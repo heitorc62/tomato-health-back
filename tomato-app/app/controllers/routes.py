@@ -197,10 +197,13 @@ def process_image():
     # Generate response from LLM
     llm_response = query_llm(prompt)
 
-    return jsonify({
+    response = jsonify({
         "ml_result": result,
         "llm_response": llm_response
     })
+    # Add CORS headers
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 #require flask login
 @blp.route('/labelling_tool')
