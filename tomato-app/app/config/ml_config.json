@@ -1,23 +1,24 @@
 {
-  "tasks": ["object_detection"],
+  "tasks": [
+    "object_detection"
+  ],
   "models": {
     "object_detection": {
       "path": "app/config/weights/best.pt",
       "architecture": "yolov8",
       "detection_threshold": 0.5,
       "num_classes": 9,
-      "classes" : {
-        "0": "Tomato Early blight leaf",
-        "1": "Tomato leaf",
-        "2": "Tomato leaf bacterial spot",
-        "3": "Tomato leaf late blight",
-        "4": "Tomato leaf mosaic virus",
-        "5": "Tomato leaf yellow virus",
-        "6": "Tomato mold leaf",
-        "7": "Tomato Septoria leaf spot",
-        "8": "Tomato two spotted spider mites leaf"
+      "classes": {
+        "0": "Folha de tomate com pinta-preta",
+        "1": "Folha de tomate saudável",
+        "2": "Folha de tomate com mancha bacteriana",
+        "3": "Folha de tomate com requeima",
+        "4": "Folha de tomate com vírus do mosaico",
+        "5": "Folha de tomate com Begomovirus (yellow leaf curl virus)",
+        "6": "Folha de tomate com mofo",
+        "7": "Folha de tomate com septoriose (fungo)",
+        "8": "Folha de tomate com ácaro-rajado (spider mite)"
       }
     }
   }
 }
-  

@@ -410,19 +410,29 @@ def update_s3_label(label_s3_key, metadata):
         s3.upload_fileobj(label_content_bytes, current_app.config['S3_BUCKET'], label_s3_key)
     except Exception as e:
         print(f"Error updating label in S3: {e}")
+
+def only_tomato_leaves(objects):
+    for obj in objects:
+        class_name = obj['class_name']
+        if class_name != "Folha de tomate saudável":
+            return False
+    return True
         
 
 def create_llm_prompt(result):
     detected_objects = result.get('detected_objects', [])
     
     if not detected_objects:
-        return "No objects detected in the image."
+        return "Não detectamos folhas de tomate na imagem."
+
+    if only_tomato_leaves(detected_objects):
+        return "De acordo com nosso algorítmo, seu tomateiro está saudável."
 
     image_width = result['image_width']
     image_height = result['image_height']
 
     prompt = (
-        f"The image of size {image_width}x{image_height} pixels contains the following detected diseases:\n"
+        f"A imagem de tamanho {image_width}x{image_height} pixels contém as seguintes doenças detectadas:\n"
     )
 
     for idx, obj in enumerate(detected_objects):
@@ -431,17 +441,17 @@ def create_llm_prompt(result):
         box = obj['box']
         x1, y1, x2, y2 = box
 
-        location = f"from ({x1}, {y1}) to ({x2}, {y2})"
+        location = f"De ({x1}, {y1}) até ({x2}, {y2})"
         prompt += (
-            f"{idx + 1}. Disease: {class_name}\n"
-            f"   Confidence: {score:.2f}\n"
-            f"   Location: {location}\n\n"
+            f"{idx + 1}. Doença: {class_name}\n"
+            f"   Confiança: {score:.2f}\n"
+            f"   Localização: {location}\n\n"
         )
     
     # Add a request for advice at the end of the prompt
     prompt += (
-        "Please provide advice on how to manage or treat the detected diseases and suggestions for improving the growth "
-        "and health of the tomato plant overall."
+        "Por favor providencie conselhos em como controlar e tratar as doenças detectadas e sugestões para melhorar o crescimento"
+        "e saúde da planta de tomate no geral."
     )
     
     return prompt
@@ -449,8 +459,10 @@ def create_llm_prompt(result):
 
 
 def query_llm(prompt):
-    if prompt == "No objects detected in the image.":
-        return "Our model did not detect any relevant information about tomatoes in the image. Have in mind that this is an app in development and we are constantly improving our models."
+    if prompt == "Não detectamos folhas de tomate na imagem.":
+        return "Nosso modelo não detectou nenhuma imagem relacionada à tomates na imagem. Se você considera isso um erro, lembre-se que o aplicativo está em fase de desenvolvimento e estamos constantemente melhorando nossos modelos de detecção de doenças em folhas de tomate."
+    elif prompt == "De acordo com nosso algorítmo, seu tomateiro está saudável.":
+        return "De acordo com nosso algorítmo, seu tomateiro está saudável. Se você considera isso um erro, lembre-se que o aplicativo está em fase de desenvolvimento e estamos constantemente melhorando nossos modelos de detecção de doenças em folhas de tomate."
     try:
         # Access OpenAI API
         response = current_app.openai_client.chat.completions.create(
