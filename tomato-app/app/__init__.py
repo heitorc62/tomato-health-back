@@ -17,6 +17,7 @@ def get_label_studio_client():
     """Returns a Label Studio client instance."""
     try:
         # Create the client instance
+        print(f"THE API KEY WE ARE USING IS: {current_app.config['LABEL_STUDIO_API_KEY']}")
         client = LabelStudio(
             base_url=current_app.config['LABEL_STUDIO_URL'],
             api_key=current_app.config['LABEL_STUDIO_API_KEY']
@@ -78,7 +79,7 @@ def update_webhook(client, project_id):
         webhook_id = webhook_list[0].id
         client.webhooks.delete(id=webhook_id)
     
-    client.webhooks.create(request=Webhook(url=f"http://{socket.gethostbyname(socket.gethostname())}:5000/labelling_tool/webhook", project=project_id))
+    client.webhooks.create(url=f"http://{socket.gethostbyname(socket.gethostname())}:5000/labelling_tool/webhook", project=project_id)
     
 
 def create_app(config='app.config.config.Config'):

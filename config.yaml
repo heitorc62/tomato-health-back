@@ -1,0 +1,16 @@
+sendgrid:
+  api_key: "YOUR_SENDGRID_API_KEY"
+  verified_sender: "YOUR_VERIFIED_EMAIL"
+
+openai:
+  api_key: "YOUR_OPENAI_API_KEY"
+
+training:
+  method: "local"    # options: local, remote, remote_within_network
+  remote_ssh:
+    host: "remote_host"
+    user: "remote_user"
+    key_path: "path_to_ssh_key"
+  network_ssh:
+    host_within_network: "internal_host"  # required if training method is remote_within_network
+    user: "network_user"
