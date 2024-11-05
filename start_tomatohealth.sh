@@ -3,37 +3,6 @@
 # Create .env file:
 python init_env.py
 
-# Install dependencies (ngrok)
-echo "Checking if ngrok is installed..."
-
-if ! command -v ngrok &> /dev/null; then
-  echo "ngrok not found. Installing the latest fixed version..."
-  
-  # Define the ngrok version to install
-  NGROK_VERSION="3.1.0"  # Replace with the desired stable version
-  ARCH=$(uname -m)
-  
-  # Set the download URL based on system architecture
-  if [[ "$ARCH" == "x86_64" ]]; then
-    NGROK_URL="https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v${NGROK_VERSION}-linux-amd64.zip"
-  elif [[ "$ARCH" == "arm64" ]]; then
-    NGROK_URL="https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v${NGROK_VERSION}-linux-arm64.zip"
-  else
-    echo "Unsupported architecture: $ARCH"
-    exit 1
-  fi
-
-  # Download and install ngrok
-  curl -o ngrok.zip $NGROK_URL
-  unzip ngrok.zip
-  sudo mv ngrok /usr/local/bin/
-  rm ngrok.zip
-  
-  echo "ngrok installed successfully."
-else
-  echo "ngrok is already installed."
-fi
-
 # Load variables from the .env file
 source .env
 

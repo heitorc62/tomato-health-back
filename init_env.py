@@ -64,7 +64,7 @@ elif training_method == 'remote_within_network':
     # Network SSH details
     network_ssh = config['training']['network_ssh']
     user_env_vars.extend([
-        f"export NETWORK_SSH_HOST={network_ssh['host_within_network']}",
+        f"export GPU_SSH_HOST={network_ssh['host_within_network']}",
         f"export NETWORK_SSH_USER={network_ssh['user']}",
         f"export NETWORK_SSH_AUTH_METHOD={network_ssh['auth_method']}"
     ])

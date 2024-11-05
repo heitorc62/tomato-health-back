@@ -1,16 +1,21 @@
 sendgrid:
-  api_key: "YOUR_SENDGRID_API_KEY"
-  verified_sender: "YOUR_VERIFIED_EMAIL"
+  api_key: "<your_sendgrid_api_key>"
+  verified_sender: "<your_verified_sender_email>"
 
 openai:
-  api_key: "YOUR_OPENAI_API_KEY"
+  api_key: "<your_openai_api_key>"
 
 training:
-  method: "local"    # options: local, remote, remote_within_network
+  method: "remote_within_network"    # options: local, remote, remote_within_network
   remote_ssh:
-    host: "remote_host"
-    user: "remote_user"
-    key_path: "path_to_ssh_key"
+    host: "your_host"
+    user: "your_user"
+    auth_method: "password"  # options: key, password
+    key_path: "path_to_ssh_key"  # required if auth_method is key
+    password: "your_password"    # required if auth_method is password
   network_ssh:
-    host_within_network: "internal_host"  # required if training method is remote_within_network
-    user: "network_user"
+    host_within_network: "gpu_host"  # required if training method is remote_within_network
+    user: "your_user"
+    auth_method: "password"  # options: key, password
+    key_path: "path_to_network_ssh_key"  # required if auth_method is key
+    password: "your_password"    # required if auth_method is password
