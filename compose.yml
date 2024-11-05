@@ -26,7 +26,6 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - "~/.aws:/root/.aws"
       - migrations_data:/tomato/migrations
     networks:
       - mynetwork
@@ -88,9 +87,22 @@ services:
       - label_studio_data:/label-studio/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
+      interval: 30s
       timeout: 5s
       retries: 5
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin    # usuário root padrão para MinIO
+      MINIO_ROOT_PASSWORD: minioadmin # senha root padrão para MinIO
+    ports:
+      - "9000:9000"      # Porta de acesso ao MinIO (compatível com S3)
+      - "9001:9001"      # Porta de acesso ao painel de administração do MinIO
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
 
 
 networks:
@@ -102,4 +114,6 @@ volumes:
   migrations_data:
     driver: local
   label_studio_data:
+    driver: local
+  minio_data:
     driver: local

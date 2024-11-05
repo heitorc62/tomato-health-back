@@ -63,7 +63,11 @@ def update_S3_dataset(reviewed_images, config):
     training_split = config['TRAIN_PERCENTAGE']
     region = config['AWS_REGION']
     
-    s3 = boto3.client('s3', region_name=region)
+    s3 = boto3.client('s3',
+                    endpoint_url=os.getenv('AWS_S3_ENDPOINT'),
+                    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                    region_name=region)
     
     # Split reviewed images into training and validation sets
     total_images = len(reviewed_images)
@@ -150,7 +154,12 @@ def save_image_to_db(image_bytes, result, config):
     label_content = get_label_content(image_record.image_metadata)
     
     # Store the image and label to S3 bucket
-    s3 = boto3.client('s3', region_name=config['AWS_REGION'])
+    s3 = boto3.client('s3', 
+                    endpoint_url=os.getenv('AWS_S3_ENDPOINT'),
+                    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                    region_name=config['AWS_REGION'])
+    
     s3.upload_fileobj(io.BytesIO(image_bytes), config['S3_BUCKET'], image_record.s3_key)
     
     # For the label, convert the label content to bytes and upload to S3
@@ -345,7 +354,11 @@ def generate_presigned_url(bucket_name, object_key, expiration=3600):
     :param expiration: Time in seconds for the presigned URL to remain valid
     :return: Presigned URL as string. If error, returns None.
     """
-    s3_client = boto3.client('s3', region_name=current_app.config['AWS_REGION'])
+    s3_client = boto3.client('s3',         
+                            endpoint_url=os.getenv('AWS_S3_ENDPOINT'),
+                            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                            region_name=current_app.config['AWS_REGION'])
     try:
         response = s3_client.generate_presigned_url(
             'get_object',
@@ -404,7 +417,12 @@ def generate_image_metadata(annotations):
 def update_s3_label(label_s3_key, metadata):
     # Update YOLO label file content
     try:
-        s3 = boto3.client('s3', region_name=current_app.config['AWS_REGION'])
+        s3 = boto3.client('s3',         
+                        endpoint_url=os.getenv('AWS_S3_ENDPOINT'),
+                        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                        region_name=current_app.config['AWS_REGION'])
+        
         label_content = get_label_content(metadata)
         label_content_bytes = io.BytesIO(label_content.encode('utf-8'))
         s3.upload_fileobj(label_content_bytes, current_app.config['S3_BUCKET'], label_s3_key)
