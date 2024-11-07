@@ -208,11 +208,18 @@ def labelling_tool():
     unreviewed_image = db.session.query(ImageModel).filter_by(status=ImageStatus.PENDING).first()
     if not unreviewed_image:
         return redirect(url_for('Routes.no_images'))
-    # Step 2: Create a task in Label Studio for the unreviewed image
+    # Step 2: Search for a task that is pending and has the same image ID
+    task = TaskStatusModel.query.filter_by(status=TaskStatus.PENDING, image_id=unreviewed_image.id).first()
+    if task:
+        # If a task is found, redirect the user to the Label Studio task page
+        task_id = task.task_id
+        label_studio_task_url = f"http://localhost:8080/projects/{current_app.LABEL_STUDIO_PROJECT_ID}/data?tab=2&task={task_id}"
+        return redirect(label_studio_task_url)
+    # Step 3: Create a task in Label Studio for the unreviewed image
     presigned_url = generate_presigned_url(current_app.config["S3_BUCKET"], unreviewed_image.s3_key)
     task_id = create_task_in_label_studio(presigned_url, unreviewed_image.image_metadata, current_app.LABEL_STUDIO_PROJECT_ID, image_id=unreviewed_image.id)
-    # Step 3: Redirect the user to the Label Studio task page
-    task_status = TaskStatusModel(task_id=task_id)
+    # Step 4: Redirect the user to the Label Studio task page
+    task_status = TaskStatusModel(task_id=task_id, image_id=unreviewed_image.id)
     db.session.add(task_status)
     db.session.commit()
     label_studio_task_url = f"http://localhost:8080/projects/{current_app.LABEL_STUDIO_PROJECT_ID}/data?tab=2&task={task_id}"
