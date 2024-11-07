@@ -4,11 +4,6 @@ services:
     environment:
       - SECRET=${SECRET}
       - DATABASE_URL=${DATABASE_URL}
-      
-      - AWS_REGION=${AWS_REGION}
-      - S3_BUCKET=${S3_BUCKET}
-      - S3_DATASET_PATH=${S3_DATASET_PATH}
-      - S3_NEW_IMAGES_PATH=${S3_NEW_IMAGES_PATH}
 
       - MAIL_DEFAULT_SENDER=${MAIL_DEFAULT_SENDER}
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
@@ -23,6 +18,11 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_REGION}
+      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT}
+
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_DATASET_PATH=${S3_DATASET_PATH}
+      - S3_NEW_IMAGES_PATH=${S3_NEW_IMAGES_PATH}
     ports:
       - "5000:5000"
     volumes:
@@ -103,6 +103,8 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
+    networks:
+      - mynetwork
 
 
 networks:

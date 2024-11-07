@@ -15,6 +15,10 @@ jwt = JWTManager()
 
 def check_and_create_bucket():
     # Configurar cliente S3
+    print(f"Endpoint: {os.getenv('AWS_S3_ENDPOINT')}")
+    print(f"Access key: {os.getenv('AWS_ACCESS_KEY_ID')}")
+    print(f"Secret key: {os.getenv('AWS_SECRET_ACCESS_KEY')}")
+    print(f"Bucket: {os.getenv('S3_BUCKET')}")
     s3_client = boto3.client(
         's3',
         endpoint_url=os.getenv('AWS_S3_ENDPOINT'),

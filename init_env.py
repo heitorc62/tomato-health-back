@@ -19,11 +19,11 @@ fixed_env_vars = [
     'export AWS_REGION=sa-east-1',
     'export S3_BUCKET=tomato-dataset',
     'export S3_DATASET_PATH=dataset',
-    'export S3_NEW_IMAGES_PATH=new_images'
+    'export S3_NEW_IMAGES_PATH=new_images',
     'export AWS_ACCESS_KEY_ID=minioadmin',
     'export AWS_SECRET_ACCESS_KEY=minioadmin',
-    'export AWS_S3_ENDPOINT=http://minio:9000' # Endpoint para MinIO
-    f'export SECRET={secrets.token_hex(32)}'
+    'export AWS_S3_ENDPOINT=http://minio:9000', # Endpoint para MinIO
+    f'export SECRET={secrets.token_hex(32)}',
 ]
 
 # User-specific environment variables from config.yaml
