@@ -375,6 +375,9 @@ def generate_presigned_url(bucket_name, object_key, expiration=3600):
         return None
 
     # The response contains the presigned URL
+    if os.getenv('AWS_S3_ENDPOINT') == 'http://minio:9000':
+        response = response.replace('http://minio:9000', 'http://localhost:9000')
+        return response
     return response
 
 def generate_image_metadata(annotations):
