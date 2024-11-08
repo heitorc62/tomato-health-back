@@ -1,5 +1,12 @@
 version: "3"
 services:
+  tomato-front:
+    build: ../tomato-health-front
+    ports:
+      - "3000:3000"
+    networks:
+      - mynetwork
+
   flask-app:
     build: ./tomato-app
     environment:
