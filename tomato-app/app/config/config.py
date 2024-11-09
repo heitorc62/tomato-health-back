@@ -9,7 +9,7 @@ class Config:
     S3_BUCKET = os.environ.get('S3_BUCKET')
     S3_NEW_IMAGES_PATH = os.environ.get('S3_NEW_IMAGES_PATH')
     S3_DATASET_PATH = os.environ.get('S3_DATASET_PATH')
-    TRAIN_PERCENTAGE = os.environ.get('TRAIN_PERCENTAGE')
+    TRAIN_PERCENTAGE = os.environ.get('TRAIN_PERCENTAGE', 0.8)
     LABEL_STUDIO_URL = os.environ.get('LABEL_STUDIO_URL')
     LABEL_STUDIO_API_KEY = os.environ.get('LABEL_STUDIO_API_KEY')
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')

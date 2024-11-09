@@ -93,11 +93,13 @@ def update_tomato_dataset():
     if not jwt_token:
         print("Please log in as an admin first.")
         return
-
-    response = requests.post(f"{BASE_URL}/update_dataset", headers=get_auth_headers())
-
+    try:
+        response = requests.post(f"{BASE_URL}/update_dataset", headers=get_auth_headers())
+    except Exception as e:
+        print(f"Failed to update dataset: {str(e)}")
+        return
     if response.status_code == 200:
-        print(f"Tomato dataset updated successfully.\n{response.body}")
+        print(f"Tomato dataset updated successfully.\n{response.json()}")
     else:
         print(f"Failed to update dataset. Status Code: {response.status_code}, Message: {response.json().get('msg')}")
         

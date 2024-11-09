@@ -20,7 +20,8 @@ blp = Blueprint("Routes", "routes", description="Routes for the application")
 def update_dataset():
     # get all reviewed images from the database
     reviewed_images = ImageModel.query.filter_by(status=ImageStatus.REVIEWED).all()
-    result = update_S3_dataset(reviewed_images)
+    print(f"Found {len(reviewed_images)} reviewed images.")
+    result = update_S3_dataset(reviewed_images, current_app.config)
     return jsonify(result)
 
 
