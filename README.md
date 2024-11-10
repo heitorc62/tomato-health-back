@@ -22,7 +22,26 @@
 
 - **Docker**: Ensures easy setup of dependencies and services.
 - **Python 3.8+**: Required to run the CLI tool and for certain back-end components.
+- **boto3**: Library needed to upload datasets files to MinIO.
 - **Ngrok**: Used for local development to expose endpoints.
+
+> **Note:** Ensure that you have signed up for an Ngrok account and installed the authtoken.
+
+After that, you will have to config the ngrok so we can use 2 tunnels with one ngrok agent. To do this, first run:
+```
+ngrok config check
+```
+Now you have the location of the configuration file. Now, add the following contents to it:
+
+```
+tunnels:
+  primary_tunnel:
+    addr: 5000
+    proto: http
+  s3_tunnel:
+    addr: 9000
+    proto: http
+```
 
 ## Setup Guide
 
@@ -35,6 +54,8 @@ cd tomatohealth
 
 ### 2. Configuration
 
+#### 2.1 Back-end
+
 Configure your environment settings in the `config.yaml` file. This file is essential for defining SendGrid settings and other parameters for the project.
 
 ```yaml
@@ -46,6 +67,23 @@ email_sender: "YOUR_SENDER_EMAIL@example.com"
 ```
 
 > **Note:** Ensure that the SendGrid API key and sender email are valid. SendGrid is used to send invitation emails to reviewers.
+
+#### 2.1 Machine Learning dedicated machine
+In the machine where you want to train the object dection models, we need to follow a different setup.
+
+Firstly, go to this machine and navigate to the `Detector/` directory. Then, create a virtual environment and activate it:
+```
+python -m venv .venv
+. .venv/bin/activate
+```
+Afterwards, install the requirements:
+```
+pip install -r requirements.txt
+```
+
+In the `training_script.sh`
+
+After that, your setup must be reay to be ran.
 
 ### 3. Running the Project
 

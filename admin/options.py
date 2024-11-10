@@ -11,24 +11,33 @@ load_dotenv()
 jwt_token = None
 
 
-def start_ngrok(port=5000):
+def start_ngrok():
     """
-    Starts an ngrok tunnel on the specified port and returns the public URL.
+    Starts all ngrok tunnels defined in the ngrok configuration file
+    and retrieves their public URLs.
     """
-    # Start ngrok as a subprocess
-    ngrok_process = subprocess.Popen(['ngrok', 'http', str(port)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    time.sleep(2)  # Give ngrok some time to initialize
+    # Start ngrok with all defined tunnels in the configuration file
+    ngrok_process = subprocess.Popen(['ngrok', 'start', '--all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    time.sleep(5)  # Give ngrok some time to initialize
 
-    # Fetch the public URL from ngrok's API
     try:
+        # Retrieve URLs for all tunnels
         response = requests.get("http://localhost:4040/api/tunnels")
         response.raise_for_status()
         tunnels = response.json()['tunnels']
-        public_url = tunnels[0]['public_url']
-        print(f"Ngrok tunnel created at {public_url}")
-        return public_url
+
+        # Collect URLs for each tunnel
+        urls = {tunnel['name']: tunnel['public_url'] for tunnel in tunnels}
+        for name, url in urls.items():
+            print(f"Ngrok tunnel '{name}' created at {url}")
+
+        return urls
+
     except Exception as e:
-        print(f"Failed to retrieve ngrok URL: {str(e)}")
+        stdout, stderr = ngrok_process.communicate()
+        print(f"Failed to retrieve ngrok URLs: {str(e)}")
+        print("Ngrok stdout:", stdout.decode())
+        print("Ngrok stderr:", stderr.decode())
         ngrok_process.terminate()
         return None
 
@@ -103,7 +112,7 @@ def update_tomato_dataset():
     else:
         print(f"Failed to update dataset. Status Code: {response.status_code}, Message: {response.json().get('msg')}")
         
-def retrain_model_remote_within_network(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key):
+def retrain_model_remote_within_network(path_to_script, dataset_name, s3_access_key, s3_secret_key):
     # Retrieve SSH credentials from environment variables
     shell_host = os.getenv("SSH_HOST")  # e.g., 'shell.vision.ime.usp.br'
     shell_user = os.getenv("SSH_USER")  # e.g., 'heitorc62'
@@ -122,19 +131,18 @@ def retrain_model_remote_within_network(path_to_script, dataset_name, weights_id
         print("Missing second machine SSH credentials. Please check your .env file.")
         return
     
-    # Start ngrok and retrieve the URL
-    ngrok_url = start_ngrok()
-    if not ngrok_url:
-        print("Failed to start ngrok. Aborting remote training.")
-        return
-    
-    s3_ngrok_url = start_ngrok(9000)
-    if not s3_ngrok_url:
-        print("Failed to start ngrok for MinIO. Aborting remote training.")
+    # Start ngrok and retrieve the URLs
+    urls = start_ngrok()
+    if not urls:
+        print("Failed to start ngrok tunnels. Aborting remote training.")
         return
 
+    # Assign the URLs to respective variables based on ports
+    ngrok_url = urls.get('primary_tunnel')
+    s3_ngrok_url = urls.get('s3_tunnel')
+
     # Command to SSH into deepthree and run a script
-    deepthree_command = f"ssh {gpu_host} 'bash {path_to_script} {dataset_name} {weights_id} {ngrok_url} {s3_ngrok_url} {s3_access_key} {s3_secret_key}'"
+    deepthree_command = f"ssh {gpu_host} 'bash {path_to_script} {dataset_name} {ngrok_url} {s3_ngrok_url} {s3_access_key} {s3_secret_key}'"
 
     try:
         # Create an SSH client for the shell machine
@@ -166,7 +174,7 @@ def retrain_model_remote_within_network(path_to_script, dataset_name, weights_id
     except Exception as e:
         print(f"Failed to execute the remote script: {str(e)}")
         
-def retrain_model_remote(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key):
+def retrain_model_remote(path_to_script, dataset_name, s3_access_key, s3_secret_key):
     """
     Directly SSH into the remote machine (deepthree) to run the training script from an external network.
     """
@@ -178,16 +186,15 @@ def retrain_model_remote(path_to_script, dataset_name, weights_id, s3_access_key
         print("Missing remote SSH credentials. Please check your .env file.")
         return
     
-    # Start ngrok and retrieve the URL
-    ngrok_url = start_ngrok()
-    if not ngrok_url:
-        print("Failed to start ngrok. Aborting remote training.")
+    # Start ngrok and retrieve the URLs
+    urls = start_ngrok()
+    if not urls:
+        print("Failed to start ngrok tunnels. Aborting remote training.")
         return
-    
-    s3_ngrok_url = start_ngrok(9000)
-    if not s3_ngrok_url:
-        print("Failed to start ngrok for MinIO. Aborting remote training.")
-        return
+
+    # Assign the URLs to respective variables based on ports
+    ngrok_url = urls.get('primary_tunnel')
+    s3_ngrok_url = urls.get('s3_tunnel')
 
     try:
         # Create an SSH client for the GPU machine
@@ -200,7 +207,7 @@ def retrain_model_remote(path_to_script, dataset_name, weights_id, s3_access_key
         print(f"Connected to {gpu_host}.")
 
         # Command to run the training script on the GPU machine
-        gpu_command = f"bash {path_to_script} {dataset_name} {weights_id} {ngrok_url} {s3_ngrok_url} {s3_access_key} {s3_secret_key}"
+        gpu_command = f"bash {path_to_script} {dataset_name} {ngrok_url} {s3_ngrok_url} {s3_access_key} {s3_secret_key}"
         stdin, stdout, stderr = gpu_ssh.exec_command(gpu_command)
         
         # Retrieve command output/errors
@@ -218,7 +225,7 @@ def retrain_model_remote(path_to_script, dataset_name, weights_id, s3_access_key
         print(f"Failed to execute the remote script on {gpu_host}: {str(e)}")
 
 
-def retrain_mode_local(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key):
+def retrain_mode_local(path_to_script, dataset_name, s3_access_key, s3_secret_key):
     """
     Run the training script locally on the machine.
     """
@@ -226,7 +233,7 @@ def retrain_mode_local(path_to_script, dataset_name, weights_id, s3_access_key, 
     s3_url = "http://localhost:9000"
     try:
         # Run the training script locally
-        result = os.system(f"bash {path_to_script} {dataset_name} {weights_id} {server_url} {s3_url} {s3_access_key} {s3_secret_key}")
+        result = os.system(f"bash {path_to_script} {dataset_name} {server_url} {s3_url} {s3_access_key} {s3_secret_key}")
         if result == 0:
             print("Local training process started successfully.")
         else:
@@ -237,16 +244,19 @@ def retrain_mode_local(path_to_script, dataset_name, weights_id, s3_access_key, 
 def retrain_model():
     path_to_script = input("Enter the path to the training script: ")
     dataset_name = input("Enter the name of the dataset: ")
-    weights_id = input("Enter the ID of the weights to be saved: ")
     training_method = os.getenv('TRAINING_METHOD')
     s3_access_key = os.getenv('AWS_ACCESS_KEY_ID')
     s3_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    print(f"Training method: {training_method}")
+    print(f"Dataset name: {dataset_name}")
+    print(f"S3 Access Key: {s3_access_key}")
+    print(f"S3 Secret Key: {s3_secret_key}")
     if training_method == 'remote_within_network':
-        retrain_model_remote_within_network(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key)
+        retrain_model_remote_within_network(path_to_script, dataset_name, s3_access_key, s3_secret_key)
     elif training_method == 'remote':
-        retrain_model_remote(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key)
+        retrain_model_remote(path_to_script, dataset_name, s3_access_key, s3_secret_key)
     else:
-        retrain_mode_local(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key)
+        retrain_mode_local(path_to_script, dataset_name, s3_access_key, s3_secret_key)
     
 
 def update_model():
