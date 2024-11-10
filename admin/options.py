@@ -103,7 +103,7 @@ def update_tomato_dataset():
     else:
         print(f"Failed to update dataset. Status Code: {response.status_code}, Message: {response.json().get('msg')}")
         
-def retrain_model_remote_within_network():
+def retrain_model_remote_within_network(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key):
     # Retrieve SSH credentials from environment variables
     shell_host = os.getenv("SSH_HOST")  # e.g., 'shell.vision.ime.usp.br'
     shell_user = os.getenv("SSH_USER")  # e.g., 'heitorc62'
@@ -127,9 +127,14 @@ def retrain_model_remote_within_network():
     if not ngrok_url:
         print("Failed to start ngrok. Aborting remote training.")
         return
+    
+    s3_ngrok_url = start_ngrok(9000)
+    if not s3_ngrok_url:
+        print("Failed to start ngrok for MinIO. Aborting remote training.")
+        return
 
     # Command to SSH into deepthree and run a script
-    deepthree_command = f"ssh {gpu_host} 'bash /home/heitorc62/PlantsConv/TCC/Detector/remote_script.sh dataset-v2 weights-v2 {ngrok_url}'"
+    deepthree_command = f"ssh {gpu_host} 'bash {path_to_script} {dataset_name} {weights_id} {ngrok_url} {s3_ngrok_url} {s3_access_key} {s3_secret_key}'"
 
     try:
         # Create an SSH client for the shell machine
@@ -161,7 +166,7 @@ def retrain_model_remote_within_network():
     except Exception as e:
         print(f"Failed to execute the remote script: {str(e)}")
         
-def retrain_model_remote():
+def retrain_model_remote(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key):
     """
     Directly SSH into the remote machine (deepthree) to run the training script from an external network.
     """
@@ -178,6 +183,11 @@ def retrain_model_remote():
     if not ngrok_url:
         print("Failed to start ngrok. Aborting remote training.")
         return
+    
+    s3_ngrok_url = start_ngrok(9000)
+    if not s3_ngrok_url:
+        print("Failed to start ngrok for MinIO. Aborting remote training.")
+        return
 
     try:
         # Create an SSH client for the GPU machine
@@ -190,7 +200,7 @@ def retrain_model_remote():
         print(f"Connected to {gpu_host}.")
 
         # Command to run the training script on the GPU machine
-        gpu_command = f"bash /home/heitorc62/PlantsConv/TCC/Detector/remote_script.sh dataset-v2 weights-v2 {ngrok_url}"
+        gpu_command = f"bash {path_to_script} {dataset_name} {weights_id} {ngrok_url} {s3_ngrok_url} {s3_access_key} {s3_secret_key}"
         stdin, stdout, stderr = gpu_ssh.exec_command(gpu_command)
         
         # Retrieve command output/errors
@@ -208,19 +218,15 @@ def retrain_model_remote():
         print(f"Failed to execute the remote script on {gpu_host}: {str(e)}")
 
 
-def retrain_mode_local():
+def retrain_mode_local(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key):
     """
     Run the training script locally on the machine.
     """
-    local_script_path = "/home/user/PlantsConv/TCC/Detector/local_training_script.sh"
-    
-    if not os.path.exists(local_script_path):
-        print(f"Local training script not found at {local_script_path}.")
-        return
-
+    server_url = "http://localhost:5000"
+    s3_url = "http://localhost:9000"
     try:
         # Run the training script locally
-        result = os.system(f"bash {local_script_path} dataset-v2 weights-v2")
+        result = os.system(f"bash {path_to_script} {dataset_name} {weights_id} {server_url} {s3_url} {s3_access_key} {s3_secret_key}")
         if result == 0:
             print("Local training process started successfully.")
         else:
@@ -229,14 +235,18 @@ def retrain_mode_local():
         print(f"Failed to execute the local training script: {str(e)}")
         
 def retrain_model():
-    """SSH into the first machine (shell.vision.ime.usp.br), then SSH into the second machine (deepthree), and run the training script."""
+    path_to_script = input("Enter the path to the training script: ")
+    dataset_name = input("Enter the name of the dataset: ")
+    weights_id = input("Enter the ID of the weights to be saved: ")
     training_method = os.getenv('TRAINING_METHOD')
+    s3_access_key = os.getenv('AWS_ACCESS_KEY_ID')
+    s3_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
     if training_method == 'remote_within_network':
-        retrain_model_remote_within_network()
+        retrain_model_remote_within_network(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key)
     elif training_method == 'remote':
-        retrain_model_remote()
+        retrain_model_remote(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key)
     else:
-        retrain_mode_local()
+        retrain_mode_local(path_to_script, dataset_name, weights_id, s3_access_key, s3_secret_key)
     
 
 def update_model():
