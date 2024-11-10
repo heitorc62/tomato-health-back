@@ -51,6 +51,10 @@ docker compose down
 source .env
 echo "API key set: $LABEL_STUDIO_API_KEY"
 
-docker compose --env-file .env up --build
+docker compose --env-file .env up --build    # Use --detach to run in the background
 
 #echo "All services started with Label Studio API token set."
+
+# Run script to upload dataset to S3 (checks are already made in the script)
+#pip install boto3
+#python upload_dataset_to_s3.py --bucket-name $S3_BUCKET --dataset-path ../Detector/datasets/plantdoc-Tomato-YOLO --endpoint http://localhost:9000 --access_key minioadmin --secret_access_key minioadmin
