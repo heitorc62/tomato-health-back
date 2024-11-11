@@ -26,7 +26,6 @@ def update_dataset():
 
 
 @blp.route('/update_weights', methods=['POST'])
-@jwt_required()
 def update_weights():
     try:
         # Check if the file is part of the request
@@ -51,6 +50,7 @@ def update_weights():
         return jsonify({"message": "Weights updated and model reloaded successfully."}), 200
 
     except Exception as e:
+        print(f"Error updating weights: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
     
