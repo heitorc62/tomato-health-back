@@ -68,5 +68,6 @@ class TaskStatus(enum.Enum):
 class TaskStatusModel(db.Model):
     __tablename__ = 'task_status'
     id = db.Column(db.Integer, primary_key=True)
+    image_id = db.Column(db.Integer, nullable=False)
     task_id = db.Column(db.Integer, nullable=False)
     status = db.Column(db.Enum(TaskStatus), nullable=False, default=TaskStatus.PENDING)

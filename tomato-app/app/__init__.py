@@ -1,4 +1,4 @@
-import torch, socket, httpx
+import torch, socket, httpx, os, boto3
 from openai import OpenAI
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, current_app
@@ -6,17 +6,47 @@ from flask_migrate import Migrate
 from app.config.config import Config
 from flask_jwt_extended import JWTManager
 from label_studio_sdk.client import LabelStudio
-from label_studio_sdk import Webhook
 from flask_login import LoginManager
+from botocore.exceptions import ClientError
 
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
+def check_and_create_bucket():
+    # Configurar cliente S3
+    print(f"Endpoint: {os.getenv('AWS_S3_ENDPOINT')}")
+    print(f"Access key: {os.getenv('AWS_ACCESS_KEY_ID')}")
+    print(f"Secret key: {os.getenv('AWS_SECRET_ACCESS_KEY')}")
+    print(f"Bucket: {os.getenv('S3_BUCKET')}")
+    s3_client = boto3.client(
+        's3',
+        endpoint_url=os.getenv('AWS_S3_ENDPOINT'),
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+    )
+
+    bucket_name = os.getenv('S3_BUCKET')
+    
+    try:
+        # Tenta obter o bucket para verificar se ele existe
+        s3_client.head_bucket(Bucket=bucket_name)
+        print(f"Bucket '{bucket_name}' já existe.")
+    except ClientError as e:
+        # Se o erro indicar que o bucket não existe, cria-o
+        if e.response['Error']['Code'] == '404':
+            print(f"Bucket '{bucket_name}' não encontrado. Criando bucket...")
+            s3_client.create_bucket(Bucket=bucket_name)
+            print(f"Bucket '{bucket_name}' criado com sucesso.")
+        else:
+            print("Erro ao verificar o bucket:", e)
+            raise
+
 def get_label_studio_client():
     """Returns a Label Studio client instance."""
     try:
         # Create the client instance
+        print(f"THE API KEY WE ARE USING IS: {current_app.config['LABEL_STUDIO_API_KEY']}")
         client = LabelStudio(
             base_url=current_app.config['LABEL_STUDIO_URL'],
             api_key=current_app.config['LABEL_STUDIO_API_KEY']
@@ -78,7 +108,7 @@ def update_webhook(client, project_id):
         webhook_id = webhook_list[0].id
         client.webhooks.delete(id=webhook_id)
     
-    client.webhooks.create(request=Webhook(url=f"http://{socket.gethostbyname(socket.gethostname())}:5000/labelling_tool/webhook", project=project_id))
+    client.webhooks.create(url=f"http://{socket.gethostbyname(socket.gethostname())}:5000/labelling_tool/webhook", project=project_id)
     
 
 def create_app(config='app.config.config.Config'):
@@ -118,6 +148,8 @@ def create_app(config='app.config.config.Config'):
             update_webhook(app.label_studio_client, app.LABEL_STUDIO_PROJECT_ID)
         except Exception as e:
             raise RuntimeError(f"Error during Label Studio project creation: {str(e)}")
+        
+        check_and_create_bucket()
     
     from app.controllers import routes_bp
     app.register_blueprint(routes_bp)

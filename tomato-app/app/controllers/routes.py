@@ -10,7 +10,7 @@ from app.models import ImageModel, ImageStatus, ReviewerModel, InvitationModel, 
 from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, jwt_required
 from datetime import timedelta
-import io, secrets, requests
+import io, secrets, requests, os
 from flask_login import login_user, login_required
 
 blp = Blueprint("Routes", "routes", description="Routes for the application")
@@ -20,41 +20,37 @@ blp = Blueprint("Routes", "routes", description="Routes for the application")
 def update_dataset():
     # get all reviewed images from the database
     reviewed_images = ImageModel.query.filter_by(status=ImageStatus.REVIEWED).all()
-    result = update_S3_dataset(reviewed_images)
+    print(f"Found {len(reviewed_images)} reviewed images.")
+    result = update_S3_dataset(reviewed_images, current_app.config)
     return jsonify(result)
 
 
 @blp.route('/update_weights', methods=['POST'])
-@jwt_required()
 def update_weights():
     try:
-        # Extract the weights URL from the request
-        request_data = request.get_json()
-        weights_url = request_data.get('weights_url')
-        weights_key = request_data.get('weights_key')
+        # Check if the file is part of the request
+        if 'weights' not in request.files:
+            return jsonify({"error": "Weights file is missing in the request."}), 400
+
+        # Get the uploaded file and the weights key
+        weights_file = request.files['weights']
+        weights_key = request.form.get('weights_key', 'default_weights.pt')
         
-        if not weights_url or not weights_key:
-            return jsonify({"error": "weights_url or weights_key is missing in the request."}), 400
-
         # Local path where the weights will be saved
-        local_weights_path = f"app/config/weights/{weights_key}"
+        local_weights_path = os.path.join("app/config/weights", weights_key)
 
-        # Download the file from the presigned URL
-        response = requests.get(weights_url)
-        if response.status_code == 200:
-            with open(local_weights_path, 'wb') as f:
-                f.write(response.content)
-            print(f"New weights downloaded and saved at: {local_weights_path}")
-        else:
-            return jsonify({"error": "Failed to download the weights file from the presigned URL."}), 400
+        # Save the uploaded file to the specified path
+        weights_file.save(local_weights_path)
+        print(f"New weights file saved at: {local_weights_path}")
 
         # Reload the model with the new weights
         current_app.models["object_detection"] = load_new_weights(local_weights_path)  # Custom function to load the new weights
         print(f"Model reloaded with the new weights from {local_weights_path}")
         
         return jsonify({"message": "Weights updated and model reloaded successfully."}), 200
-    
+
     except Exception as e:
+        print(f"Error updating weights: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
     
@@ -213,11 +209,18 @@ def labelling_tool():
     unreviewed_image = db.session.query(ImageModel).filter_by(status=ImageStatus.PENDING).first()
     if not unreviewed_image:
         return redirect(url_for('Routes.no_images'))
-    # Step 2: Create a task in Label Studio for the unreviewed image
+    # Step 2: Search for a task that is pending and has the same image ID
+    task = TaskStatusModel.query.filter_by(status=TaskStatus.PENDING, image_id=unreviewed_image.id).first()
+    if task:
+        # If a task is found, redirect the user to the Label Studio task page
+        task_id = task.task_id
+        label_studio_task_url = f"http://localhost:8080/projects/{current_app.LABEL_STUDIO_PROJECT_ID}/data?tab=2&task={task_id}"
+        return redirect(label_studio_task_url)
+    # Step 3: Create a task in Label Studio for the unreviewed image
     presigned_url = generate_presigned_url(current_app.config["S3_BUCKET"], unreviewed_image.s3_key)
     task_id = create_task_in_label_studio(presigned_url, unreviewed_image.image_metadata, current_app.LABEL_STUDIO_PROJECT_ID, image_id=unreviewed_image.id)
-    # Step 3: Redirect the user to the Label Studio task page
-    task_status = TaskStatusModel(task_id=task_id)
+    # Step 4: Redirect the user to the Label Studio task page
+    task_status = TaskStatusModel(task_id=task_id, image_id=unreviewed_image.id)
     db.session.add(task_status)
     db.session.commit()
     label_studio_task_url = f"http://localhost:8080/projects/{current_app.LABEL_STUDIO_PROJECT_ID}/data?tab=2&task={task_id}"
