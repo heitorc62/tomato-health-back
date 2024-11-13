@@ -1,4 +1,0 @@
-[submodule "label-studio"]
-	path = label-studio
-	url = https://github.com/heitorc62/label-studio.git
-	branch = develop
