@@ -162,7 +162,7 @@ def login():
         # Check if the user exists and if the password is correct
         if reviewer is None or not pbkdf2_sha256.verify(password, reviewer.password):
             flash('Invalid username or password', 'danger')
-            return redirect(url_for('login'))
+            return redirect(url_for('Routes.login'))
 
         # Log the user in
         login_user(reviewer)
