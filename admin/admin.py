@@ -9,7 +9,9 @@ def handle_admin_input(input_option):
     elif input_option == 3:
         send_invitation()
     elif input_option == 4:
+        print("Updating the tomato dataset with the reviewed images...")
         update_tomato_dataset()
+        print("Tomato dataset updated successfully!")
     elif input_option == 5:
         update_model()
     elif input_option == 6:
@@ -34,6 +36,7 @@ if __name__ == "__main__":
         print("0. Exit")
         try:
             input_option = int(input("Enter your choice: "))
+            print("Choice selected:", input_option)
             handle_admin_input(input_option)
         except ValueError:
             print("Invalid input, please enter a number.")
