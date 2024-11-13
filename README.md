@@ -7,7 +7,8 @@
 
 1. **Front-End User Interface**: The Next.js client interface allows users to upload images of tomato leaves to the Flask API.
 2. **Back-End Processing (Flask)**: The Flask API is pre-equipped with a YOLOv8n model trained on an initial dataset. When a user uploads an image, the model detects and returns the diseases found in the image. Additionally, all uploaded images are stored in MinIO (for local development) as part of the dataset-building process.
-3. **Admin Controls**: An admin CLI tool invites reviewers to join the platform via SendGrid. Reviewers can then verify model annotations, enhancing dataset quality. Once annotations are approved, they can be integrated into the dataset for retraining the YOLOv8 model.
+3. **Label-Studio**: The Label-Studio application is the labelling tool that the reviewers will use to review the images.
+4. **Admin Controls**: An admin CLI tool invites reviewers to join the platform via SendGrid. Reviewers can then verify model annotations, enhancing dataset quality. Once annotations are approved, they can be integrated into the dataset for retraining the YOLOv8 model.
 
 ## Key Features
 
@@ -45,11 +46,12 @@ tunnels:
 
 ## Setup Guide
 
-### 1. Clone the Repository
+### 1. Clone the Repositories
 
+#### 1.1 Clone the main repository (Machine Learning, Back-end and Front-end) and the Label-Studio repositories
 ```bash
-git clone https://github.com/yourusername/tomatohealth.git
-cd tomatohealth
+git clone git@github.com:heitorc62/TCC.git && git clone git@github.com:heitorc62/label-studio.git
+cd TCC
 ```
 
 ### 2. Configuration
