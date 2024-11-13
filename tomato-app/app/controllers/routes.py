@@ -263,7 +263,7 @@ def labelling_callback():
             presigned_url = generate_presigned_url(current_app.config["S3_BUCKET"], new_image.s3_key)
             new_task_id = create_task_in_label_studio(presigned_url, new_image.image_metadata, current_app.LABEL_STUDIO_PROJECT_ID, image_id=new_image.id)
             print(f"New task created with ID {new_task_id}")
-            new_task_status = TaskStatusModel(task_id=new_task_id)
+            new_task_status = TaskStatusModel(task_id=new_task_id, image_id=new_image.id)
             db.session.add(new_task_status)
             
             # Mark the current task as completed
