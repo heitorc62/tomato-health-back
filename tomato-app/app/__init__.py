@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager
 from label_studio_sdk.client import LabelStudio
 from flask_login import LoginManager
 from botocore.exceptions import ClientError
+from flask_cors import CORS
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -115,6 +116,8 @@ def create_app(config='app.config.config.Config'):
     app = Flask(__name__, template_folder='view')
     app.config.from_object(config)
     Config.init_app(app)
+    # Enable CORS globally
+    CORS(app)
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)

@@ -175,8 +175,16 @@ def login():
     return render_template('login.html')
 
 
-@blp.route('/process_image', methods=['POST'])
+@blp.route('/process_image', methods=['POST', 'OPTIONS'])
 def process_image():
+    if request.method == 'OPTIONS':
+        # CORS preflight response for OPTIONS method
+        response = jsonify({'status': 'CORS preflight'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response
+    
     if 'image' not in request.files:
         return jsonify({'error': 'No image uploaded'}), 400
 
